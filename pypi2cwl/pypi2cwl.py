@@ -28,6 +28,7 @@ def install_package(repo_name, pip_version, install_globally):
             break
     sys.path.insert(0, DIR)
     os.chdir(DIR)
+    import setup as s
 
 
 def generate_tools(args):
