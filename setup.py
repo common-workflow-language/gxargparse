@@ -16,10 +16,11 @@ setup(name="gxargparse",
         author_email='rasche.eric@yandex.ru, anton.khodak@ukr.net',
         install_requires=['galaxyxml', 'jinja2', 'future'],
         url='https://github.com/common-workflow-language/gxargparse',
-        packages=["argparse", "gxargparse"],
+        packages=["argparse", "gxargparse", "pypi2cwl"],
         entry_points={
             'console_scripts': [
                     'gxargparse_check_path = gxargparse.check_path:main',
+                    'pypi2cwl = pypi2cwl.pypi2cwl:main'
                 ]
             },
         classifiers=[
