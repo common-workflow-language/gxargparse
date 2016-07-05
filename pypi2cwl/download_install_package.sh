@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# $1 - package name
-# $2 - pip2/pip3 - python version
-# $3 - True/False : True - install globally, False - install within virtualenv
+# $1 - working directory
+# $2 - package name
+# $3 - pip2/pip3 - python version
+# $4 - True/False : True - install globally, False - install within virtualenv
 
+cd $1
 mkdir p2c-dir
 cd p2c-dir
 
@@ -10,13 +12,13 @@ cd p2c-dir
 package_downloaded=false
 for entry in *
 do
-    if [[ $entry == $1* ]]; then
+    if [[ $entry == $2* ]]; then
     package_downloaded=true
     fi
 done
 
 if [ "$package_downloaded" = false ]; then
-    pip download $1 --no-deps --no-binary :all:
+    pip download $2 --no-deps --no-binary :all:
     for entry in *
     do
         if [[ $entry =~ \.gz$ ]]; then
@@ -26,8 +28,8 @@ if [ "$package_downloaded" = false ]; then
     done
 fi
 
-if [ "$3" == "True" ]; then
-sudo $2 install $1
+if [ "$4" == "True" ]; then
+sudo $3 install $2
 else
-$2 install $1
+$3 install $2
 fi

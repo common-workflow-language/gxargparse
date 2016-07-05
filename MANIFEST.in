@@ -1,2 +1,4 @@
 include README.md
 include argparse/templates/*.j2
+include VERSION
+include pypi2cwl/*.sh

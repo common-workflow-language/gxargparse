@@ -10,6 +10,8 @@ import setuptools as old_setuptools
 import argparse as ap
 
 params = None
+current_dir = os.getcwd()
+
 
 def setup(*args, **kwargs):
     global params
@@ -17,10 +19,10 @@ def setup(*args, **kwargs):
 
 
 def install_package(repo_name, pip_version, install_globally):
-    subprocess.call(['./download_install_package.sh {0} {1} {2}'.
-                    format(repo_name, pip_version, install_globally)], shell=True)
+    subprocess.call([os.path.dirname(__file__) + '/./download_install_package.sh {0} {1} {2} {3}'.
+                    format(current_dir, repo_name, pip_version, install_globally)], shell=True)
     # p2c-dir is created inside `download_install_package.sh` script
-    base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'p2c-dir'))
+    base_path = os.path.abspath(os.path.join(current_dir, 'p2c-dir'))
     # importing setup from the target repo and parsing scripts
     for directory in os.listdir(base_path):
         if directory.lower().startswith(repo_name.lower()):
@@ -45,6 +47,7 @@ def generate_tools(args):
             if args.generate_outputs:
                 command.extend(['-go'])
             subprocess.call(command)
+        print('CWL tool descriptions are successfully generated into {0}'.format(args.directory or os.getcwd()))
     else:
         raise KeyError
 
@@ -65,6 +68,8 @@ def main():
     parser.add_argument('-v', '--venv', action='store_false',
                         help="Choose this option if you run pypi2cwl in a virtual environment so the package is "
                              "not installed globally")
+    # parser.add_argument('--no-clean', action='store_true',
+    #                     help=)
     args = parser.parse_args()
     repo_name = args.repo
     install_globally = True and args.venv
