@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # $1 - working directory
 # $2 - package name
-# $3 - pip2/pip3 - python version
-# $4 - True/False : True - install globally, False - install within virtualenv
+# $3 - True/False : True - install globally, False - install within virtualenv
 
 cd $1
 mkdir p2c-dir
@@ -18,18 +17,20 @@ do
 done
 
 if [ "$package_downloaded" = false ]; then
-    pip download $2 --no-deps --no-binary :all:
+    pip install $2 --download . --no-deps --no-binary :all:
     for entry in *
     do
         if [[ $entry =~ \.gz$ ]]; then
         tar xf ${entry}
+        y=${entry%%.tar.gz}
+        2to3 -w ${y##*/}/setup.py
         rm -rf ${entry}
         fi
     done
 fi
 
-if [ "$4" == "True" ]; then
-sudo $3 install $2
+if [ "$3" == "True" ]; then
+    sudo pip2 install $2 || sudo pip3 install $2 || exit 1;
 else
-$3 install $2
+    pip2 install $2 || pip3 install $2 || exit 1
 fi

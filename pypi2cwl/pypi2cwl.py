@@ -1,6 +1,7 @@
 # /usr/bin/python3
 import imp
 import os
+import shutil
 import string
 import subprocess
 import sys
@@ -10,7 +11,8 @@ import setuptools as old_setuptools
 import argparse as ap
 
 params = None
-current_dir = os.getcwd()
+package_dir = None
+base_dir = os.getcwd()
 
 
 def setup(*args, **kwargs):
@@ -18,36 +20,45 @@ def setup(*args, **kwargs):
     params = kwargs
 
 
-def install_package(repo_name, pip_version, install_globally):
-    subprocess.call([os.path.dirname(__file__) + '/./download_install_package.sh {0} {1} {2} {3}'.
-                    format(current_dir, repo_name, pip_version, install_globally)], shell=True)
+def normalize(s):
+    return s.lower().replace('-', '_')
+
+
+def install_package(repo_name, install_globally):
+    global package_dir
+    exit_status = subprocess.call([os.path.dirname(__file__) + '/./download_install_package.sh {0} {1} {2}'.
+                    format(base_dir, repo_name, install_globally)], shell=True)
+    if exit_status == 1:
+        sys.exit("Package couldn't install, try installing manually")
     # p2c-dir is created inside `download_install_package.sh` script
-    base_path = os.path.abspath(os.path.join(current_dir, 'p2c-dir'))
+    p2cdir = os.path.abspath(os.path.join(base_dir, 'p2c-dir'))
     # importing setup from the target repo and parsing scripts
-    for directory in os.listdir(base_path):
-        if directory.lower().startswith(repo_name.lower()):
-            DIR = os.path.join(base_path, directory)
+    for directory in os.listdir(p2cdir):
+        if normalize(directory).startswith(normalize(repo_name)):
+            package_dir = os.path.join(p2cdir, directory)
             break
-    sys.path.insert(0, DIR)
-    os.chdir(DIR)
+    sys.path.insert(0, package_dir)
+    os.chdir(package_dir)
     import setup as s
 
 
 def generate_tools(args):
+    if params is None:
+        sys.exit('Check setup.py of the downloaded package at {0}; could not import setup function'.format(package_dir))
     if params.get('entry_points', ''):
         console_scripts = params['entry_points'].get('console_scripts', '')
         if console_scripts:
+            if not params.get('scripts', ''):
+                params['scripts'] = []
             for script in console_scripts:
                 params['scripts'].append(script.split('=')[0].strip())
     if params.get('scripts', ''):
         for script in list(map(lambda script: script.split('/')[-1], params['scripts'])):
-            command = [script, '--generate_cwl_tool']
-            if args.directory:
-                command.extend(['-d', args.directory])
+            command = [script, '--generate_cwl_tool', '-d', args.directory or base_dir]
             if args.generate_outputs:
                 command.extend(['-go'])
             subprocess.call(command)
-        print('CWL tool descriptions are successfully generated into {0}'.format(args.directory or os.getcwd()))
+        print('CWL tool descriptions are successfully generated into {0}'.format(args.directory or base_dir))
     else:
         raise KeyError
 
@@ -68,14 +79,14 @@ def main():
     parser.add_argument('-v', '--venv', action='store_false',
                         help="Choose this option if you run pypi2cwl in a virtual environment so the package is "
                              "not installed globally")
-    # parser.add_argument('--no-clean', action='store_true',
-    #                     help=)
+    parser.add_argument('--no-clean', action='store_true',
+                        help="Don't delete a directory with the source code")
     args = parser.parse_args()
     repo_name = args.repo
     install_globally = True and args.venv
 
     if not all(map(lambda x: x in string.ascii_letters + string.digits + '-_', repo_name)):
-        raise ValueError('Incorrect repository name')
+        sys.exit("Package with name `{0}` doesn't exist".format(repo_name))
     else:
         setuptools = imp.new_module('setuptools')
         sys.modules['setuptools'] = setuptools
@@ -83,17 +94,15 @@ def main():
         k = list(map(lambda x: setattr(setuptools, x, getattr(old_setuptools, x)), dir(old_setuptools)))
         setuptools.setup = setup
 
-        install_package(repo_name, 'pip2', install_globally)
+        install_package(repo_name, install_globally)
         try:
             generate_tools(args)
         except KeyError:
-            raise KeyError('No scripts provided in setup.py of the package')
-        except:
-            install_package(repo_name, 'pip3', install_globally)
-            try:
-                generate_tools(args)
-            except:
-                raise ValueError('Something went wrong')
+            sys.exit('Tools cannot be generated: no scripts provided in the setup.py of the package, '
+                     'check {0}/setup.py'.format(package_dir))
+        finally:
+            if not args.no_clean:
+                shutil.rmtree(os.path.join(base_dir, 'p2c-dir'))
 
 
 if __name__ == "__main__":
