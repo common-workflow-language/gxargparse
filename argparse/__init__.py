@@ -120,15 +120,20 @@ class ArgumentParser(ap.ArgumentParser):
                         tool.description += argp.epilog
 
                     data = tool.export()
-                    filename = '{0}.cwl'.format(tool.name.replace('.py',''))
-                    filename = re.sub('\s+', '-', filename)
+                    # if there is more than one file, ignore specified filename
+                    if 'filename' in kwargs and len(tools)==1:
+                        filename = kwargs['filename']
+                    else:
+                        filename = '{0}.cwl'.format(tool.name.replace('.py',''))
+                        filename = re.sub('\s+', '-', filename)
                     directory = kwargs.get('directory', '')
                     if directory and directory[-1] != '/':
                         directory += '/'
                     filename = directory + filename
                     with open(filename, 'w') as f:
                         f.write(data)
-                    print(data)
+                    if 'verbose' in kwargs:
+                        print(data)
                 else:
                     continue
         sys.exit(0)

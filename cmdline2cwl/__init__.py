@@ -60,6 +60,10 @@ class Arg2CWLParser:
                                     help='Command for running your tool(s), without arguments')
         arg2cwl_parser.add_argument('-d', '--directory',
                                     help='Directory to store CWL tool descriptions')
+        arg2cwl_parser.add_argument('-f', '--filename',
+                                    help='Name of the generated file (if single). Default - the name of the running command')
+        arg2cwl_parser.add_argument('-v', '--verbose', action='store_true',
+                                    help='Print generated file(s) to stdout')
         arg2cwl_parser.add_argument('-b', '--basecommand',
                                     help='Command that appears in `basecommand` field in CWL tool '
                                          'instead of the default one')
@@ -92,13 +96,15 @@ class Arg2CWLParser:
         else:
             formcommand += kwargs['command']
 
-        attrs = ['directory', 'output_section', 'basecommand', 'generate_outputs']
+        attrs = ['directory', 'filename', 'output_section', 'basecommand', 'generate_outputs', 'verbose']
         for arg in attrs:
             if getattr(self.args, arg):
                 kwargs[arg] = getattr(self.args, arg)
 
         if kwargs.get('output_section', ''):
             formcommand += ' -o FILENAME'
+        if kwargs.get('filename', ''):
+            formcommand += ' -f FILENAME'
         if kwargs.get('basecommand', ''):
             formcommand += ' -b {0}'.format(kwargs['basecommand'])
         if kwargs.get('generate_outputs', ''):
