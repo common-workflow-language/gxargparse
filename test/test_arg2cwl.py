@@ -162,7 +162,11 @@ class CWLTestCase(unittest.TestCase):
         parser, tool = self.get_simple_tool('test-optional.py')
         for action in self._strip_help_version_actions(parser._actions):
             if (action.option_strings and not action.required) or action.nargs in ('*', '?'):
-                self.assertEqual('null', tool.inputs[action.dest].type[0])
+                param_type = tool.inputs[action.dest].type
+                if type(param_type[-1]) is dict:
+                    self.assertEqual('null', param_type[0])
+                else:
+                    self.assertEqual('?', param_type[-1])
             else:
                 self.assertNotIsInstance(tool.inputs[action.dest].type, list)
 
